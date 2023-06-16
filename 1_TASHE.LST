@@ -1,0 +1,155 @@
+Turbo Assembler	 Version 4.1	    05/14/22 14:59:10	    Page 1
+1_tashe.asm
+
+
+
+      1				     ;=================================================================
+      2								 ;le data
+      3				     ;=================================================================
+      4	0000			     data segment
+      5	0000  64 65 72 6F 75 74	65+	 msg0 db "deroutement fait .....",0ah,0dh,"$"
+      6	      6D 65 6E 74 20 66	61+
+      7	      69 74 20 2E 2E 2E	2E+
+      8	      2E 0A 0D 24
+      9	0019  0A 0D 2A 2A 2A 2A	70+	 msg1 db 0ah,0dh,'****programme	principal en cours****$'
+     10	      72 6F 67 72 61 6D	6D+
+     11	      65 20 70 72 69 6E	63+
+     12	      69 70 61 6C 20 65	6E+
+     13	      20 63 6F 75 72 73	2A+
+     14	      2A 2A 2A 24
+     15	0040  6F 68 2C 20 6C 61	20+	 msg2 db 'oh, la 1ch ...... $'
+     16	      31 63 68 20 2E 2E	2E+
+     17	      2E 2E 2E 20 24
+     18					 ;1s=1000ms  la	1ch execute chack 55ms donc
+     19	0053  0012			 cpt dw	18;x=1000/55=18
+     20	0055  0014			 cm dw 20
+     21	0057			     data ends
+     22				     ;=================================================================
+     23								 ;la pile
+     24				     ;=================================================================
+     25	0000			     pile segment stack
+     26	0000  80*(????)			 dw 128	dup(?)
+     27	0100				 tos label word
+     28	0100			     pile ends
+     29				     ;=================================================================
+     30								 ;le code
+     31				     ;=================================================================
+     32	0000			     code SEGMENT
+     33					 Assume	CS:code	, DS:data , SS:pile
+     34
+     35				     ;=================================================================
+     36				     ;	 la procedure derouter qui fait	le deroutement de la routin 1ch
+     37				     ;=================================================================
+     38	0000				  derouter PROC	near
+     39	0000  1E			     push ds
+     40	0001  B8 0000s			     mov ax,seg	new
+     41	0004  8E D8			     mov ds,ax
+     42	0006  BA 0017r			     mov dx, offset new
+     43	0009  B8 251C			     mov ax, 251Ch
+     44	000C  CD 21			     int 21h
+     45	000E  1F			     pop ds
+     46	000F  BA 0000r			     mov dx,offset msg0
+     47	0012  B4 09			     mov ah,09
+     48	0014  CD 21			     int 21h
+     49	0016  C3			     ret
+     50	0017				 derouter     ENDP
+     51
+     52				     ;=========================================================
+     53				     ;	 le nouvelle routine qui fait un appelle a la procedure
+     54				     ;	 affiche chaque	second
+     55				     ;=========================================================
+     56	0017				 new:
+     57	0017  B8 0000s			     mov ax,seg	cpt
+Turbo Assembler	 Version 4.1	    05/14/22 14:59:10	    Page 2
+1_tashe.asm
+
+
+
+     58	001A  8E D8			     mov ds,ax
+     59	001C  FF 0E 0053r		     dec cpt
+     60	0020  75 0D			     jnz sortie
+     61	0022  E8 000B			     call affiche
+     62	0025  C7 06 0053r 0012		     mov cpt,18
+     63	002B  FF 0E 0055r		     dec cm;a chaque fois en affish un msg on dec cm par 1
+     64	002F  CF			 sortie:iret
+     65
+     66				     ;=================================================================
+     67				     ;	 la procedure affiche pour afficher le msg oh, la 1ch....
+     68				     ;=================================================================
+     69	0030				 affiche proc near
+     70	0030  B8 0000s			     mov ax,seg	msg2
+     71	0033  8E D8			     mov ds,ax
+     72	0035  BA 0040r			     mov dx,offset msg2
+     73	0038  B4 09			     mov ah,09
+     74	003A  CD 21			     int 21h
+     75	003C  C3			     ret
+     76	003D				 affiche endp
+     77
+     78				     ;=========================================================
+     79						    ;Le	programme principale
+     80				     ;=========================================================
+     81	003D			     start:
+     82	003D  B8 0000s			 mov ax,data
+     83	0040  8E D8			 mov ds,ax
+     84	0042  B8 0000s			 mov ax,pile
+     85	0045  8E D0			 mov ss,ax
+     86	0047  BC 0100r			 mov sp,offset tos
+     87
+     88	004A  E8 FFB3			 call derouter
+     89
+     90
+     91	004D  B8 0000s		     again:mov ax,seg msg1
+     92	0050  8E D8			 mov ds,ax
+     93	0052  BA 0019r			 mov dx,offset msg1
+     94	0055  B4 09			 mov ah,09
+     95	0057  CD 21			 int 21h
+     96	0059  B9 FFFF			 mov cx,0ffffh
+     97	005C  C7 06 0055r 0014		 mov cm,20
+     98	0062  BE 0FFF			 boucle_externe: mov si,0fffh
+     99	0065  4E			 boucle_interne: dec si
+    100	0066  75 FD			 jnz boucle_interne
+    101	0068  F7 06 0055r FFFF		 test cm,0ffffh;on test	si cm=0	ou nn
+    102	006E  74 DD			 jz again;si zf=0 on affish le msg ****programme principal en cours****
+    103	0070  E2 F0			 loop boucle_externe
+    104
+    105	0072  B8 4C00			 mov ax,4c00h
+    106	0075  CD 21			 int 21h
+    107	0077			     code ends
+    108				     end start
+Turbo Assembler	 Version 4.1	    05/14/22 14:59:10	    Page 3
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "05/14/22"
+??FILENAME			  Text	 "1_tashe "
+??TIME				  Text	 "14:59:10"
+??VERSION			  Number 040A
+@CPU				  Text	 0101H
+@CURSEG				  Text	 CODE
+@FILENAME			  Text	 1_TASHE
+@WORDSIZE			  Text	 2
+AFFICHE				  Near	 CODE:0030
+AGAIN				  Near	 CODE:004D
+BOUCLE_EXTERNE			  Near	 CODE:0062
+BOUCLE_INTERNE			  Near	 CODE:0065
+CM				  Word	 DATA:0055
+CPT				  Word	 DATA:0053
+DEROUTER			  Near	 CODE:0000
+MSG0				  Byte	 DATA:0000
+MSG1				  Byte	 DATA:0019
+MSG2				  Byte	 DATA:0040
+NEW				  Near	 CODE:0017
+SORTIE				  Near	 CODE:002F
+START				  Near	 CODE:003D
+TOS				  Word	 PILE:0100
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+CODE				  16  0077 Para	  none
+DATA				  16  0057 Para	  none
+PILE				  16  0100 Para	  Stack
+

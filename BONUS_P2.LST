@@ -1,0 +1,261 @@
+Turbo Assembler	 Version 4.1	    05/14/22 14:58:48	    Page 1
+Bonus_p2.asm
+
+
+
+      1				     ;=================================================================
+      2								 ;le data
+      3				     ;=================================================================
+      4	0000			     data segment
+      5	0000  64 65 72 6F 75 74	65+	 msg0 db "deroutement fait .....$"
+      6	      6D 65 6E 74 20 66	61+
+      7	      69 74 20 2E 2E 2E	2E+
+      8	      2E 24
+      9	0017  0A 0D 72 65 63 75	70+	 msg01 db 0ah,0dh,"recupiration	fait .....$"
+     10	      69 72 61 74 69 6F	6E+
+     11	      20 66 61 69 74 20	2E+
+     12	      2E 2E 2E 2E 24
+     13	0031  0A 0D 0A 0D 74 61	63+	 msg1 db 0ah,0dh,0ah,0dh,"tache1 en cours d'execution$"
+     14	      68 65 31 20 65 6E	20+
+     15	      63 6F 75 72 73 20	64+
+     16	      27 65 78 65 63 75	74+
+     17	      69 6F 6E 24
+     18	0051  0A 0D 74 61 63 68	65+	 msg2 db 0ah,0dh,"tache2 en cours d'execution$"
+     19	      32 20 65 6E 20 63	6F+
+     20	      75 72 73 20 64 27	65+
+     21	      78 65 63 75 74 69	6F+
+     22	      6E 24
+     23	006F  0A 0D 74 61 63 68	65+	 msg3 db 0ah,0dh,"tache3 en cours d'execution$"
+     24	      33 20 65 6E 20 63	6F+
+     25	      75 72 73 20 64 27	65+
+     26	      78 65 63 75 74 69	6F+
+     27	      6E 24
+     28	008D  0A 0D 74 61 63 68	65+	 msg4 db 0ah,0dh,"tache4 en cours d'execution$"
+     29	      34 20 65 6E 20 63	6F+
+     30	      75 72 73 20 64 27	65+
+     31	      78 65 63 75 74 69	6F+
+     32	      6E 24
+     33					 ;5min=300000ms	la 1ch execute chack 55ms donc
+     34	00AB  15DF			 cpt dw	15dfh ;x=300000/55=5455
+     35					 ;5s=5000ms  la	1ch execute chack 55ms donc
+     36	00AD  005B			 cpt0 dw 91d ;x=5000/55=90.9
+     37	00AF  0001			 cpt1 dw 1
+     38	00B1  0002			 cpt2 dw 2
+     39	00B3  0003			 cpt3 dw 3
+     40	00B5  0004			 cpt4 dw 4
+     41	00B7  ????			 ancienCS dw
+*Warning* Bonus_p2.asm(19) Missing operand - trailing ?	assumed
+     42	00B9  ????			 ancienIP dw
+*Warning* Bonus_p2.asm(20) Missing operand - trailing ?	assumed
+     43	00BB			     data ends
+     44				     ;=================================================================
+     45								 ;la pile
+     46				     ;=================================================================
+     47	0000			     pile segment stack
+     48	0000  80*(????)			 dw 128	dup(?)
+     49	0100				 tos label word
+     50	0100			     pile ends
+     51				     ;=================================================================
+     52								 ;le code
+     53				     ;=================================================================
+     54	0000			     code SEGMENT
+     55					 Assume	CS:code	, DS:data , SS:pile
+Turbo Assembler	 Version 4.1	    05/14/22 14:58:48	    Page 2
+Bonus_p2.asm
+
+
+
+     56
+     57				     ;=================================================================
+     58				     ;	 la procedure derouter qui fait	le deroutement de la routin 1ch
+     59				     ;=================================================================
+     60	0000				  derouter PROC	near
+     61	0000  1E			     push ds
+     62	0001  B8 0000s			     mov ax,seg	new
+     63	0004  8E D8			     mov ds,ax
+     64	0006  BA 0030r			     mov dx, offset new
+     65	0009  B8 251C			     mov ax, 251Ch
+     66	000C  CD 21			     int 21h
+     67	000E  1F			     pop ds
+     68	000F  BA 0000r			     mov dx,offset msg0
+     69	0012  B4 09			     mov ah,09
+     70	0014  CD 21			     int 21h
+     71	0016  C3			     ret
+     72	0017				 derouter     ENDP
+     73
+     74				     ;=================================================================
+     75				     ;	 la procedure derouter qui recupire l'ancien routin de la 1ch
+     76				     ;=================================================================
+     77	0017				 derout2 PROC near
+     78	0017  1E			     push ds
+     79	0018  8E 1E 00B7r		     mov ds,ancienCS
+     80	001C  8B 16 00B9r		     mov dx,ancienIP
+     81	0020  B8 251C			     mov ax, 251Ch
+     82	0023  CD 21			     int 21h
+     83	0025  1F			     pop ds
+     84	0026  BA 0017r			     mov dx,offset msg01
+     85	0029  B4 09			     mov ah,09
+     86	002B  CD 21			     int 21h
+     87	002D  E9 00A8			     jmp near ptr thend
+     88	0030				  derout2     ENDP
+     89				     ;=========================================================
+     90				     ;	 le nouvelle routine qui fait un appelle a la procedure
+     91				     ;	 affiche1 et affiche2 et affiche3 et affiche4 respictivement
+     92				     ;	 chaque	5 second et s'arrete apres 5 min
+     93				     ;=========================================================
+     94	0030				  new:
+     95	0030  B8 0000s			     mov ax,seg	cpt0
+     96	0033  8E D8			     mov ds,ax
+     97	0035  FF 0E 00ABr		     dec cpt
+     98	0039  74 DC			     jz	near ptr derout2;si cmpt=0 (donc il past 5min) on jmp a	derout2
+     99	003B  FF 0E 00ADr		     dec cpt0
+    100	003F  75 42			     jnz sortie
+    101	0041  C7 06 00ADr 005B		     mov cpt0,91d
+    102	0047  FF 0E 00AFr		     dec cpt1
+    103	004B  75 09			     jnz here2
+    104	004D  E8 0034			     call affiche1
+    105	0050  C7 06 00AFr 0004		     mov cpt1,4
+    106	0056  FF 0E 00B1r	       here2:dec cpt2
+    107	005A  75 09			     jnz here3
+    108	005C  E8 0032			     call affiche2
+    109	005F  C7 06 00B1r 0004		     mov cpt2,4
+    110	0065  FF 0E 00B3r	       here3:dec cpt3
+    111	0069  75 09			     jnz here4
+    112	006B  E8 0030			     call affiche3
+Turbo Assembler	 Version 4.1	    05/14/22 14:58:48	    Page 3
+Bonus_p2.asm
+
+
+
+    113	006E  C7 06 00B3r 0004		     mov cpt3,4
+    114	0074  FF 0E 00B5r	       here4:dec cpt4
+    115	0078  75 09			     jnz sortie
+    116	007A  E8 002E			     call affiche4
+    117	007D  C7 06 00B5r 0004		     mov cpt4,4
+    118
+    119	0083  CF		      sortie:iret
+    120
+    121				     ;=================================================================
+    122				     ;	 les procedure affiche pour afficher telle tache est en	cours d'execution
+    123				     ;=================================================================
+    124	0084				 affiche1 proc near
+    125	0084  B8 0000s			     mov ax,seg	msg1
+    126	0087  8E D8			     mov ds,ax
+    127	0089  BA 0031r			     mov dx,offset msg1
+    128	008C  B4 09			     mov ah,09
+    129	008E  CD 21			     int 21h
+    130	0090  C3			     ret
+    131	0091				     affiche1 endp
+    132	0091				  affiche2 proc	near
+    133	0091  B8 0000s			     mov ax,seg	msg2
+    134	0094  8E D8			     mov ds,ax
+    135	0096  BA 0051r			     mov dx,offset msg2
+    136	0099  B4 09			     mov ah,09
+    137	009B  CD 21			     int 21h
+    138	009D  C3			     ret
+    139	009E				     affiche2 endp
+    140	009E				  affiche3 proc	near
+    141	009E  B8 0000s			     mov ax,seg	msg3
+    142	00A1  8E D8			     mov ds,ax
+    143	00A3  BA 006Fr			     mov dx,offset msg3
+    144	00A6  B4 09			     mov ah,09
+    145	00A8  CD 21			     int 21h
+    146	00AA  C3			     ret
+    147	00AB				     affiche3 endp
+    148	00AB				  affiche4 proc	near
+    149	00AB  B8 0000s			     mov ax,seg	msg4
+    150	00AE  8E D8			     mov ds,ax
+    151	00B0  BA 008Dr			     mov dx,offset msg4
+    152	00B3  B4 09			     mov ah,09
+    153	00B5  CD 21			     int 21h
+    154	00B7  C3			     ret
+    155	00B8				     affiche4 endp
+    156
+    157				     ;=========================================================
+    158						    ;Le	programme principale
+    159				     ;=========================================================
+    160	00B8			     start:
+    161	00B8  B8 0000s			 mov ax,data
+    162	00BB  8E D8			 mov ds,ax
+    163	00BD  B8 0000s			 mov ax,pile
+    164	00C0  8E D0			 mov ss,ax
+    165	00C2  BC 0100r			 mov sp,offset tos
+    166
+    167					 ; recupiration	de ancian ip et	cs
+    168				     ;-----------------------------------------
+    169	00C5  B4 35			 mov ah,35h
+Turbo Assembler	 Version 4.1	    05/14/22 14:58:48	    Page 4
+Bonus_p2.asm
+
+
+
+    170	00C7  B0 1C			 mov al,1ch
+    171	00C9  CD 21			 int 21h
+    172	00CB  8C 06 00B7r		 mov ancienCS,es
+    173	00CF  89 1E 00B9r		 mov ancienIP,bx
+    174
+    175	00D3  E8 FF2A			 call derouter
+    176	00D6  EB FE			 encore:jmp encore;boucle infini
+    177	00D8  B8 4C00		     thend:mov ax,4c00h
+    178	00DB  CD 21			 int 21h
+    179	00DD			     code ends
+    180				     end start
+Turbo Assembler	 Version 4.1	    05/14/22 14:58:48	    Page 5
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "05/14/22"
+??FILENAME			  Text	 "Bonus_p2"
+??TIME				  Text	 "14:58:48"
+??VERSION			  Number 040A
+@CPU				  Text	 0101H
+@CURSEG				  Text	 CODE
+@FILENAME			  Text	 BONUS_P2
+@WORDSIZE			  Text	 2
+AFFICHE1			  Near	 CODE:0084
+AFFICHE2			  Near	 CODE:0091
+AFFICHE3			  Near	 CODE:009E
+AFFICHE4			  Near	 CODE:00AB
+ANCIENCS			  Word	 DATA:00B7
+ANCIENIP			  Word	 DATA:00B9
+CPT				  Word	 DATA:00AB
+CPT0				  Word	 DATA:00AD
+CPT1				  Word	 DATA:00AF
+CPT2				  Word	 DATA:00B1
+CPT3				  Word	 DATA:00B3
+CPT4				  Word	 DATA:00B5
+DEROUT2				  Near	 CODE:0017
+DEROUTER			  Near	 CODE:0000
+ENCORE				  Near	 CODE:00D6
+HERE2				  Near	 CODE:0056
+HERE3				  Near	 CODE:0065
+HERE4				  Near	 CODE:0074
+MSG0				  Byte	 DATA:0000
+MSG01				  Byte	 DATA:0017
+MSG1				  Byte	 DATA:0031
+MSG2				  Byte	 DATA:0051
+MSG3				  Byte	 DATA:006F
+MSG4				  Byte	 DATA:008D
+NEW				  Near	 CODE:0030
+SORTIE				  Near	 CODE:0083
+START				  Near	 CODE:00B8
+THEND				  Near	 CODE:00D8
+TOS				  Word	 PILE:0100
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+CODE				  16  00DD Para	  none
+DATA				  16  00BB Para	  none
+PILE				  16  0100 Para	  Stack
+Turbo Assembler	 Version 4.1	    05/14/22 14:58:48	    Page 6
+Error Summary
+
+
+
+*Warning* Bonus_p2.asm(19) Missing operand - trailing ?	assumed
+*Warning* Bonus_p2.asm(20) Missing operand - trailing ?	assumed
+
